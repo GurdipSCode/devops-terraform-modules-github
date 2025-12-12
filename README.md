@@ -9,6 +9,9 @@
 [![tfsec](https://img.shields.io/badge/tfsec-passing-brightgreen.svg)](https://github.com/aquasecurity/tfsec)
 [![TFLint](https://img.shields.io/badge/TFLint-passing-brightgreen.svg)](https://github.com/terraform-linters/tflint)
 [![Checkov](https://img.shields.io/badge/Checkov-passing-brightgreen.svg)](https://www.checkov.io/)
+[![Semgrep](https://img.shields.io/badge/Semgrep-passing-brightgreen.svg?logo=semgrep&logoColor=white)](https://semgrep.dev/)
+[![GitGuardian](https://img.shields.io/badge/GitGuardian-passing-brightgreen.svg?logo=gitguardian&logoColor=white)](https://www.gitguardian.com/)
+[![Snyk](https://img.shields.io/badge/Snyk-passing-brightgreen.svg?logo=snyk&logoColor=white)](https://snyk.io/)
 
 ## Overview
 
