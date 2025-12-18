@@ -1,26 +1,29 @@
-resource "github_branch_protection" "default" {
-  for_each = github_repository.repos
+resource "github_organization_ruleset" "protect_main" {
+  name        = "org-protect-main"
+  target      = "branch"
+  enforcement = "active"
 
-  repository_id = each.value.node_id
-  pattern       = each.value.default_branch
-
-  required_status_checks {
-    strict   = true
-    contexts = []
+  conditions {
+    ref_name {
+      include = ["refs/heads/main"]
+    }
   }
 
-  enforce_admins = true
+  rules {
+    creation                = true
+    update                  = true
+    deletion                = true
+    required_linear_history = true
+    required_signatures     = true
 
-  required_pull_request_reviews {
-    dismissal_restrictions          = {}
-    dismiss_stale_reviews           = true
-    require_code_owner_reviews      = false
-    required_approving_review_count = 1
-  }
+    pull_request {
+      required_approving_review_count = 1
+      require_code_owner_review       = true
+      dismiss_stale_reviews           = true
+    }
 
-  restrictions {
-    users = []
-    teams = []
-    apps  = []
+    required_status_checks {
+      strict = true
+    }
   }
 }
