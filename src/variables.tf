@@ -1,3 +1,8 @@
+variable "gpg_key" {
+  type = string
+  description = "GPG Public key"
+}
+
 variable "github_owner" {
 type = string
 description = "GitHub user or organization to own the repo"
