@@ -8,6 +8,28 @@ type = string
 description = "GitHub user or organization to own the repo"
 }
 
+variable "github_teams" {
+  description = "List of GitHub teams to create in the organization"
+  type = list(object({
+    name        = string
+    description = string
+    privacy     = string
+  }))
+  default = [
+    {
+      name        = "DevOps"
+      description = "DevOps"
+      privacy     = "closed"
+    },
+    {
+      name        = "SecOps"
+      description = "SecOps"
+      privacy     = "closed"
+    }
+  ]
+}
+
+
 variable "armored_public_key" {
   type = string
   description = "GPG public keys"
