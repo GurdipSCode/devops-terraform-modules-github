@@ -5,6 +5,116 @@ variable "org_billing_email" {
   default     = "billing@example.com"
 }
 
+variable "repositories" {
+  description = "Map of GitHub repositories to create"
+  type = map(object({
+    description = string
+    visibility  = string
+    
+    # Repository Features (optional)
+    has_issues      = optional(bool, true)
+    has_projects    = optional(bool, false)
+    has_wiki        = optional(bool, false)
+    has_downloads   = optional(bool, false)
+    has_discussions = optional(bool, false)
+    
+    # Repository Settings (optional)
+    is_template               = optional(bool, false)
+    allow_merge_commit        = optional(bool, true)
+    allow_squash_merge        = optional(bool, true)
+    allow_rebase_merge        = optional(bool, true)
+    allow_auto_merge          = optional(bool, false)
+    delete_branch_on_merge    = optional(bool, true)
+    squash_merge_commit_title = optional(string, "COMMIT_OR_PR_TITLE")
+    merge_commit_title        = optional(string, "MERGE_MESSAGE")
+    
+    # Auto-init (optional)
+    auto_init          = optional(bool, false)
+    gitignore_template = optional(string, null)
+    license_template   = optional(string, null)
+    
+    # Security & Analysis (optional)
+    vulnerability_alerts                    = optional(bool, true)
+    enable_automated_security_fixes         = optional(bool, true)
+    
+    # Topics (optional)
+    topics = optional(list(string), [])
+    
+    # Homepage (optional)
+    homepage_url = optional(string, null)
+    
+    # Archive (optional)
+    archived = optional(bool, false)
+    
+    # Branch Protection (optional)
+    default_branch = optional(string, "main")
+    branch_protection = optional(object({
+      pattern                         = optional(string, "main")
+      enforce_admins                  = optional(bool, true)
+      require_signed_commits          = optional(bool, true)
+      required_linear_history         = optional(bool, false)
+      require_conversation_resolution = optional(bool, true)
+      
+      required_status_checks = optional(object({
+        strict   = optional(bool, true)
+        contexts = optional(list(string), [])
+      }), null)
+      
+      required_pull_request_reviews = optional(object({
+        dismiss_stale_reviews           = optional(bool, true)
+        require_code_owner_reviews      = optional(bool, true)
+        required_approving_review_count = optional(number, 1)
+        restrict_dismissals             = optional(bool, false)
+      }), null)
+      
+      restrictions = optional(object({
+        users = optional(list(string), [])
+        teams = optional(list(string), [])
+        apps  = optional(list(string), [])
+      }), null)
+    }), null)
+    
+    # Team Access (optional)
+    team_permissions = optional(map(string), {})
+    
+    # Webhooks (optional)
+    webhooks = optional(map(object({
+      events       = list(string)
+      url          = string
+      content_type = optional(string, "json")
+      insecure_ssl = optional(bool, false)
+      active       = optional(bool, true)
+      secret       = optional(string, null)
+    })), {})
+  }))
+  
+  default = {}
+}
+
+# Example default values
+variable "default_visibility" {
+  description = "Default visibility for repositories"
+  type        = string
+  default     = "private"
+  validation {
+    condition     = contains(["public", "private", "internal"], var.default_visibility)
+    error_message = "Visibility must be public, private, or internal"
+  }
+}
+
+variable "enable_security_by_default" {
+  description = "Enable security features by default for all repositories"
+  type        = bool
+  default     = true
+}
+
+variable "delete_branch_on_merge_default" {
+  description = "Delete head branch after merge by default"
+  type        = bool
+  default     = true
+}
+
+
 variable "org_company" {
   description = "Company name"
   type        = string
