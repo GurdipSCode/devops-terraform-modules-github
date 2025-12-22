@@ -1,13 +1,7 @@
-# Add a team to the organization
-resource "github_team" "devops_team" {
-  name        = "DevOps"
-  description = "DevOps"
-  privacy     = "closed"
-}
+resource "github_team" "teams" {
+  for_each = { for team in var.github_teams : team.name => team }
 
-# Add a team to the organization
-resource "github_team" "secops_team" {
-  name        = "SecOps"
-  description = "SecOps"
-  privacy     = "closed"
+  name        = each.value.name
+  description = each.value.description
+  privacy     = each.value.privacy
 }
