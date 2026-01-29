@@ -1,0 +1,34 @@
+# .semgrep.yml
+# Semgrep configuration for Terraform module repository
+
+rules:
+  # Include custom rules from your GitHub repository
+  - https://raw.githubusercontent.com/your-org/terraform-semgrep-rules/main/rules/terraform-security.yml
+  - https://raw.githubusercontent.com/your-org/terraform-semgrep-rules/main/rules/terraform-best-practices.yml
+
+  # Include Semgrep's official Terraform rulesets
+  - p/terraform
+  - p/security-audit
+  - p/owasp-top-ten
+
+# Configuration options
+options:
+  # Exclude certain paths from scanning
+  exclude:
+    - ".terraform/"
+    - "*.tfstate"
+    - "*.tfstate.backup"
+    - ".git/"
+    - "examples/"
+    - "tests/"
+
+  # Set severity thresholds
+  severity:
+    - ERROR
+    - WARNING
+
+# Custom rules can be referenced directly via URL in the rules section above
+# Just point to the raw GitHub URL of your rule files
+
+# Example CI integration command:
+# semgrep --config .semgrep.yml --json --output semgrep-results.json

@@ -1,0 +1,9 @@
+severity_overrides:
+  LOW: IGNORE
+  MEDIUM: IGNORE
+
+exclude:
+  - .terraform
+  - vendor
+
+exclude_downloaded_modules: true

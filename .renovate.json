@@ -1,0 +1,242 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base",
+    ":semanticCommits",
+    ":dependencyDashboard"
+  ],
+  "terraform": {
+    "enabled": true,
+    "ignorePaths": [
+      "**/examples/**"
+    ]
+  },
+  "packageRules": [
+    {
+      "description": "Checkly provider updates",
+      "matchDatasources": ["terraform-provider"],
+      "matchPackageNames": ["checkly/checkly"],
+      "groupName": "Checkly Provider",
+      "schedule": ["before 9am on monday"],
+      "commitMessagePrefix": "chore(deps):",
+      "labels": ["checkly-provider", "dependencies"],
+      "reviewers": ["team:platform-team"]
+    },
+    {
+      "description": "Auto-merge patch updates for Checkly provider",
+      "matchDatasources": ["terraform-provider"],
+      "matchPackageNames": ["checkly/checkly"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash",
+      "platformAutomerge": true,
+      "requiredStatusChecks": ["buildkite/terraform-tests"]
+    },
+    {
+      "description": "Minor Checkly provider updates - auto-merge after tests",
+      "matchDatasources": ["terraform-provider"],
+      "matchPackageNames": ["checkly/checkly"],
+      "matchUpdateTypes": ["minor"],
+      "automerge": true,
+      "automergeType": "pr",
+      "requiredStatusChecks": ["buildkite/terraform-tests"],
+      "prBodyNotes": [
+        "Minor version update for Checkly provider. Review the [changelog](https://github.com/checkly/terraform-provider-checkly/releases) if needed."
+      ]
+    },
+    {
+      "description": "Major Checkly provider updates require manual review",
+      "matchDatasources": ["terraform-provider"],
+      "matchPackageNames": ["checkly/checkly"],
+      "matchUpdateTypes": ["major"],
+      "labels": ["major-update", "requires-review", "breaking-change"],
+      "reviewers": ["team:platform-team"],
+      "commitMessagePrefix": "feat(deps)!:",
+      "automerge": false,
+      "prBodyNotes": [
+        "⚠️ **MAJOR VERSION UPDATE**",
+        "",
+        "This is a major version update for the Checkly provider. Please:",
+        "1. Review the [CHANGELOG](https://github.com/checkly/terraform-provider-checkly/releases)",
+        "2. Check for breaking changes",
+        "3. Test all check configurations",
+        "4. Verify alerting and notification settings"
+      ]
+    },
+    {
+      "description": "Terraform core version updates",
+      "matchDatasources": ["terraform-version"],
+      "labels": ["terraform-core"],
+      "schedule": ["before 9am on the first day of the month"],
+      "commitMessagePrefix": "chore(terraform):",
+      "reviewers": ["team:platform-team"]
+    },
+    {
+      "description": "HashiCorp Vault provider updates",
+      "matchDatasources": ["terraform-provider"],
+      "matchPackageNames": ["hashicorp/vault"],
+      "groupName": "Vault Provider",
+      "schedule": ["before 9am on monday"],
+      "commitMessagePrefix": "chore(deps):",
+      "labels": ["vault-provider", "dependencies"],
+      "reviewers": ["team:platform-team"]
+    },
+    {
+      "description": "Auto-merge patch updates for Vault provider",
+      "matchDatasources": ["terraform-provider"],
+      "matchPackageNames": ["hashicorp/vault"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash",
+      "platformAutomerge": true,
+      "requiredStatusChecks": ["buildkite/terraform-tests"]
+    },
+    {
+      "description": "Minor Vault provider updates - auto-merge after tests",
+      "matchDatasources": ["terraform-provider"],
+      "matchPackageNames": ["hashicorp/vault"],
+      "matchUpdateTypes": ["minor"],
+      "automerge": true,
+      "automergeType": "pr",
+      "requiredStatusChecks": ["buildkite/terraform-tests"],
+      "prBodyNotes": [
+        "Minor version update for Vault provider. Review the [changelog](https://github.com/hashicorp/terraform-provider-vault/releases) if needed."
+      ]
+    },
+    {
+      "description": "Major Vault provider updates require manual review",
+      "matchDatasources": ["terraform-provider"],
+      "matchPackageNames": ["hashicorp/vault"],
+      "matchUpdateTypes": ["major"],
+      "labels": ["major-update", "requires-review", "breaking-change"],
+      "reviewers": ["team:platform-team", "team:security-team"],
+      "commitMessagePrefix": "feat(deps)!:",
+      "automerge": false,
+      "prBodyNotes": [
+        "⚠️ **MAJOR VERSION UPDATE**",
+        "",
+        "This is a major version update for the Vault provider. Please:",
+        "1. Review the [CHANGELOG](https://github.com/hashicorp/terraform-provider-vault/releases)",
+        "2. Check for breaking changes in Vault authentication",
+        "3. Test secret retrieval functionality",
+        "4. Verify all Vault paths and permissions"
+      ]
+    },
+    {
+      "description": "Group other provider updates (if using multiple providers)",
+      "matchDatasources": ["terraform-provider"],
+      "excludePackageNames": ["checkly/checkly", "hashicorp/vault"],
+      "groupName": "Other Terraform providers",
+      "schedule": ["before 9am on monday"]
+    },
+    {
+      "description": "Testing dependencies (if using terratest)",
+      "matchFileNames": ["**/test/**", "**/tests/**"],
+      "matchPackagePatterns": ["terratest", "gruntwork-io", "testify"],
+      "groupName": "Testing dependencies",
+      "labels": ["testing"],
+      "automerge": false,
+      "schedule": ["before 9am on monday"]
+    },
+    {
+      "description": "Pre-commit hooks",
+      "matchFileNames": [".pre-commit-config.yaml"],
+      "groupName": "pre-commit hooks",
+      "automerge": true,
+      "schedule": ["before 9am on monday"]
+    }
+  ],
+  "regexManagers": [
+    {
+      "description": "Update Terraform version in Buildkite pipelines",
+      "fileMatch": [
+        "^\\.buildkite/.+\\.ya?ml$"
+      ],
+      "matchStrings": [
+        "TERRAFORM_VERSION:\\s*[\"']?(?<currentValue>\\d+\\.\\d+\\.\\d+)[\"']?",
+        "terraform_version:\\s*[\"']?(?<currentValue>\\d+\\.\\d+\\.\\d+)[\"']?",
+        "hashicorp/terraform:(?<currentValue>\\d+\\.\\d+\\.\\d+)",
+        "terraform-version:\\s*[\"']?(?<currentValue>\\d+\\.\\d+\\.\\d+)[\"']?"
+      ],
+      "depNameTemplate": "hashicorp/terraform",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver"
+    },
+    {
+      "description": "Update TFLint version in CI",
+      "fileMatch": [
+        "^\\.buildkite/.+\\.ya?ml$",
+        "^\\.tflint\\.hcl$"
+      ],
+      "matchStrings": [
+        "TFLINT_VERSION:\\s*[\"']?v?(?<currentValue>\\d+\\.\\d+\\.\\d+)[\"']?",
+        "tflint/tflint:v(?<currentValue>\\d+\\.\\d+\\.\\d+)",
+        "version\\s*=\\s*[\"'](?<currentValue>\\d+\\.\\d+\\.\\d+)[\"']"
+      ],
+      "depNameTemplate": "terraform-linters/tflint",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "description": "Update tfsec/trivy version",
+      "fileMatch": [
+        "^\\.buildkite/.+\\.ya?ml$"
+      ],
+      "matchStrings": [
+        "TFSEC_VERSION:\\s*[\"']?v?(?<currentValue>\\d+\\.\\d+\\.\\d+)[\"']?",
+        "aquasecurity/tfsec:v(?<currentValue>\\d+\\.\\d+\\.\\d+)",
+        "aquasecurity/trivy:(?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "aquasecurity/tfsec",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "description": "Update Checkly CLI version in CI (if using)",
+      "fileMatch": [
+        "^\\.buildkite/.+\\.ya?ml$"
+      ],
+      "matchStrings": [
+        "CHECKLY_CLI_VERSION:\\s*[\"']?v?(?<currentValue>\\d+\\.\\d+\\.\\d+)[\"']?",
+        "checkly/checkly-cli:v(?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "checkly/checkly-cli",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "description": "Update module version in example configurations",
+      "fileMatch": ["^examples/.+\\.tf$"],
+      "matchStrings": [
+        "source\\s*=\\s*[\"'].*?ref=v?(?<currentValue>\\d+\\.\\d+\\.\\d+)[\"']"
+      ],
+      "depNameTemplate": "self",
+      "datasourceTemplate": "git-refs"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security", "vulnerability"],
+    "reviewers": ["team:security-team"]
+  },
+  "osvVulnerabilityAlerts": true,
+  "transitiveRemediation": true,
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "timezone": "Europe/London",
+  "schedule": ["before 9am on monday"],
+  "labels": ["dependencies", "renovate"],
+  "assignees": ["@platform-team"],
+  "reviewersFromCodeOwners": true,
+  "semanticCommits": "enabled",
+  "commitMessagePrefix": "chore(deps):",
+  "prBodyTemplate": "{{{table}}}{{{notes}}}{{{changelogs}}}{{{controls}}}{{{footer}}}",
+  "prFooter": "This PR was generated by Renovate. Questions? Check the [Renovate docs](https://docs.renovatebot.com/).",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 5am on monday"]
+  },
+  "postUpdateOptions": [
+    "gomodTidy",
+    "gomodUpdateImportPaths"
+  ]
+}
