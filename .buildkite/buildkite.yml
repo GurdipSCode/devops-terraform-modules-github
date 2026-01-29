@@ -5,10 +5,51 @@ env:
   TERRAFORM_DOCS_VERSION: "0.17.0"
   TRIVY_VERSION: "0.49.1"
   GIT_CLIFF_VERSION: "2.1.2"
+  # Vault configuration - Set VAULT_ROLE_ID and VAULT_SECRET_ID in Buildkite pipeline settings
+  # VAULT_ADDR: "https://vault.example.com"  # Uncomment and set your Vault server URL
 
 steps:
   - group: ":hammer: Setup"
     steps:
+      - label: ":key: Configure Git & Secrets"
+        key: "configure-secrets"
+        plugins:
+          - vault-secrets#v2.4.0:
+              server: "${VAULT_ADDR}"
+              path: secret/github
+              auth:
+                method: "approle"
+                role-id: "${VAULT_ROLE_ID}"
+                secret-env: "VAULT_SECRET_ID"
+              secrets:
+                - ssh_private_key > SSH_PRIVATE_KEY
+                - ssh_public_key > SSH_PUBLIC_KEY
+                - gpg_private_key > GPG_PRIVATE_KEY
+                - gpg_key_id > GPG_KEY_ID
+        command: |
+          $$ErrorActionPreference = "Stop"
+
+          Write-Host "--- Configuring SSH"
+          $$sshDir = "$$env:USERPROFILE\.ssh"
+          New-Item -ItemType Directory -Force -Path $$sshDir | Out-Null
+          Set-Content -Path "$$sshDir\id_ed25519" -Value $$env:SSH_PRIVATE_KEY -NoNewline
+          Set-Content -Path "$$sshDir\id_ed25519.pub" -Value $$env:SSH_PUBLIC_KEY -NoNewline
+
+          # Set proper permissions (Windows)
+          icacls "$$sshDir\id_ed25519" /inheritance:r /grant:r "$$env:USERNAME:(R)"
+
+          Write-Host "--- Configuring GPG"
+          $$env:GPG_PRIVATE_KEY | gpg --batch --import
+
+          Write-Host "--- Configuring Git for signed commits"
+          git config --global user.signingkey $$env:GPG_KEY_ID
+          git config --global commit.gpgsign true
+          git config --global gpg.program gpg
+          git config --global user.email "buildkite@example.com"
+          git config --global user.name "Buildkite CI"
+
+          Write-Host "--- Git and secrets configured successfully"
+
       - label: ":tofu: Install Tools"
         key: "install-tools"
         command: |
@@ -16,7 +57,7 @@ steps:
           $$ToolsDir = "C:\buildkite-tools"
           New-Item -ItemType Directory -Force -Path $$ToolsDir | Out-Null
           $$env:PATH = "$$ToolsDir;$$env:PATH"
-          
+
           Write-Host "--- Installing OpenTofu"
           Invoke-WebRequest -Uri "https://github.com/opentofu/opentofu/releases/download/v$$env:OPENTOFU_VERSION/tofu_$${env:OPENTOFU_VERSION}_windows_amd64.zip" -OutFile "$$ToolsDir\tofu.zip"
           Expand-Archive -Path "$$ToolsDir\tofu.zip" -DestinationPath $$ToolsDir -Force
@@ -267,10 +308,8 @@ steps:
       
       Write-Host "--- Creating release $$nextVersion"
       
-      # Configure git
-      git config user.email "buildkite@example.com"
-      git config user.name "Buildkite CI"
-      
+      # Git is already configured with signing in the setup step
+
       # Generate final changelog
       git-cliff --output CHANGELOG.md
       
@@ -290,6 +329,76 @@ steps:
       git push origin $$nextVersion
       
       Write-Host "--- Release $$nextVersion complete!"
+
+  - group: ":package: Build & Deploy OCI Package"
+    branches: "main"
+    steps:
+      - label: ":hammer: Build OCI Package with Nori"
+        key: "build-oci"
+        plugins:
+          - vault-secrets#v2.4.0:
+              server: "${VAULT_ADDR}"
+              path: secret/harbor
+              auth:
+                method: "approle"
+                role-id: "${VAULT_ROLE_ID}"
+                secret-env: "VAULT_SECRET_ID"
+              secrets:
+                - username > HARBOR_USERNAME
+                - password > HARBOR_PASSWORD
+        command: |
+          $$ErrorActionPreference = "Stop"
+          $$env:PATH = "C:\buildkite-tools;$$env:PATH"
+
+          # Download version artifact
+          buildkite-agent artifact download "VERSION" .
+          $$version = (Get-Content "VERSION").Trim() -replace '^v', ''
+
+          nori --version
+
+          Write-Host "--- Building OCI package with Nori"
+          nori build --version $$version --output-dir ./oci-package
+
+          Write-Host "--- OCI package built successfully"
+        artifact_paths:
+          - "oci-package/*"
+
+      - label: ":ship: Push to Harbor"
+        key: "push-harbor"
+        depends_on: "build-oci"
+        plugins:
+          - vault-secrets#v2.4.0:
+              server: "${VAULT_ADDR}"
+              path: secret/harbor
+              auth:
+                method: "approle"
+                role-id: "${VAULT_ROLE_ID}"
+                secret-env: "VAULT_SECRET_ID"
+              secrets:
+                - username > HARBOR_USERNAME
+                - password > HARBOR_PASSWORD
+                - registry_url > HARBOR_REGISTRY
+        command: |
+          $$ErrorActionPreference = "Stop"
+          $$env:PATH = "C:\buildkite-tools;$$env:PATH"
+
+          # Download version artifact
+          buildkite-agent artifact download "VERSION" .
+          $$version = (Get-Content "VERSION").Trim() -replace '^v', ''
+
+          # Download OCI package artifact
+          buildkite-agent artifact download "oci-package/*" .
+
+          Write-Host "--- Logging into Harbor registry"
+          $$env:HARBOR_PASSWORD | nori registry login $$env:HARBOR_REGISTRY --username $$env:HARBOR_USERNAME --password-stdin
+
+          Write-Host "--- Pushing OCI package to Harbor"
+          nori push ./oci-package $$env:HARBOR_REGISTRY/terraform-modules/github:$$version
+          nori push ./oci-package $$env:HARBOR_REGISTRY/terraform-modules/github:latest
+
+          Write-Host "--- Successfully pushed to Harbor"
+          Write-Host "Image: $$env:HARBOR_REGISTRY/terraform-modules/github:$$version"
+          Write-Host "Image: $$env:HARBOR_REGISTRY/terraform-modules/github:latest"
 
   - wait: ~
     continue_on_failure: true

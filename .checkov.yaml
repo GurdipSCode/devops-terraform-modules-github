@@ -1,0 +1,16 @@
+framework:
+  - terraform
+
+quiet: true
+
+soft-fail: false
+
+skip-path:
+  - .terraform
+  - vendor
+
+download-external-modules: false
+
+severity:
+  - HIGH
+  - CRITICAL

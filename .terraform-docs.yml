@@ -1,0 +1,14 @@
+formatter: markdown
+
+settings:
+  anchor: true
+  color: false
+  escape: false
+
+output:
+  file: README.md
+  mode: inject
+
+sort:
+  enabled: true
+  by: name

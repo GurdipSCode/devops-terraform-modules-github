@@ -1,0 +1,65 @@
+# -------------------------------------------------------------------
+# OpenTofu / Terraform
+# -------------------------------------------------------------------
+
+# Local .terraform directories
+.terraform/
+.terraform.lock.hcl
+
+# State files
+*.tfstate
+*.tfstate.*
+crash.log
+
+# Plan files
+*.tfplan
+*.tfplan.json
+plan.json
+
+# Variable files (often contain secrets)
+*.tfvars
+*.tfvars.json
+
+# Override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# CLI configuration
+.tofurc
+.tofurc.json
+terraform.rc
+
+# Provider binaries (older setups)
+.terraform/providers/
+
+# -------------------------------------------------------------------
+# OpenTofu experiments / tooling
+# -------------------------------------------------------------------
+
+# OPA / policy outputs
+*.rego.tmp
+opa-test-results.json
+
+# Debug / trace
+tofu.log
+tofu-debug.log
+
+# -------------------------------------------------------------------
+# OS / Editor
+# -------------------------------------------------------------------
+
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# -------------------------------------------------------------------
+# Archives
+# -------------------------------------------------------------------
+
+*.zip
+*.tar.gz
